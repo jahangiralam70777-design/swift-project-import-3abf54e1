@@ -100,7 +100,7 @@ export function DashContent() {
 
   const fetchSnapshot = useServerFn(studentDashboardSnapshot);
   const { data } = useQuery({
-    queryKey: ["student-dashboard-snapshot"],
+    queryKey: ["student-dashboard-snapshot", "submission-counts-v2"],
     queryFn: () => fetchSnapshot(),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
