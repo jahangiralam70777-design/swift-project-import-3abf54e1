@@ -121,7 +121,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       allMcqs,
       practiceProgressRows,
       nonPracticeAnswerRows,
-      recentPracticeR,
     ] = await Promise.all([
       supabase
         .from("exam_attempts")
@@ -146,13 +145,8 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       fetchAllMcqs(),
       fetchPracticeProgress(),
       fetchNonPracticeAnswers(),
-      supabase
-        .from("mcq_practice_progress")
-        .select("chapter_id,subject_id,is_correct,answered_at")
-        .eq("user_id", userId)
-        .order("answered_at", { ascending: false })
-        .limit(500),
     ]);
+
 
     const attempts = attemptsR.data ?? [];
     const subjects = subjectsR.data ?? [];
@@ -367,7 +361,8 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       });
 
     // Group recent MCQ practice answers per (chapter, calendar day).
-    // `recentPracticeR` was fetched in the top-level Promise.all above.
+    // Reuses the already-fetched `practiceProgressRows` (ordered by
+    // answered_at desc) — no extra round-trip.
     type PAgg = {
       chapterId: string | null;
       subjectId: string | null;
@@ -377,16 +372,16 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       latest: string;
     };
     const pMap = new Map<string, PAgg>();
-    for (const r of recentPracticeR.data ?? []) {
-      const at = r.answered_at as string | null;
+    for (const r of practiceProgressRows.slice(0, 500)) {
+      const at = r.answered_at;
       if (!at) continue;
       const day = new Date(at).toISOString().slice(0, 10);
       const key = `${r.chapter_id ?? "none"}|${day}`;
       const cur =
         pMap.get(key) ??
         ({
-          chapterId: (r.chapter_id as string | null) ?? null,
-          subjectId: (r.subject_id as string | null) ?? null,
+          chapterId: r.chapter_id ?? null,
+          subjectId: r.subject_id ?? null,
           day,
           correct: 0,
           total: 0,
@@ -397,6 +392,7 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       if (new Date(at) > new Date(cur.latest)) cur.latest = at;
       pMap.set(key, cur);
     }
+
     const practiceEntries = Array.from(pMap.values()).map((p) => {
       const chapName = p.chapterId ? (chapterMap.get(p.chapterId)?.name ?? null) : null;
       const subjName = p.subjectId ? (subjectMap.get(p.subjectId)?.name ?? null) : null;
