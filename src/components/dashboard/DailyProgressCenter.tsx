@@ -640,54 +640,7 @@ export function DailyProgressCenter() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard
-          title="Accuracy Over Time"
-          range={accRange}
-          onRange={setAccRange}
-          options={["today", "week"]}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={accData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-              <defs>
-                <linearGradient id="accG" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.72 0.18 150)" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="oklch(0.72 0.18 150)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                axisLine={false}
-                tickLine={false}
-                width={28}
-                domain={[0, 100]}
-              />
-              <RTooltip
-                contentStyle={{
-                  borderRadius: 12,
-                  border: "1px solid var(--border)",
-                  background: "var(--popover)",
-                  fontSize: 12,
-                }}
-                labelStyle={{ color: "var(--foreground)" }}
-                formatter={(v: number) => [`${v}%`, ""]}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="oklch(0.65 0.2 150)"
-                strokeWidth={2.5}
-                fill="url(#accG)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        <AccuracyOverTimeCard options={["today", "week"]} />
       </div>
 
       {/* Performance + Subject breakdown + Insights */}
