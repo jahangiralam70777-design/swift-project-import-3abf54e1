@@ -25,6 +25,7 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
       mockWeekR,
       notesCountR,
       classesCountR,
+      availableMockCountR,
       attemptsR,
       notificationsR,
       upcomingMockR,
@@ -61,6 +62,11 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         .select("id", { count: "exact", head: true })
         .eq("status", "published")
         .eq("is_hidden", false),
+      supabase
+        .from("quizzes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "published")
+        .eq("kind", "mock"),
       supabase
         .from("exam_attempts")
         .select("id,kind,quiz_id,subject_id,score,correct_count,total_count,completed_at,started_at,created_at,status")
@@ -275,6 +281,7 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         quizzesThisWeek: quizWeekR.count ?? 0,
         mocks: mockWeekR.count ?? 0,
         mocksThisWeek: mockWeekR.count ?? 0,
+        availableMocks: availableMockCountR.count ?? 0,
         notes: notesCountR.count ?? 0,
         classes: classesCountR.count ?? 0,
         attempts: completed.length,
