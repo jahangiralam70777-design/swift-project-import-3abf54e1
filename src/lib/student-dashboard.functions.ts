@@ -81,6 +81,49 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
       return counts;
     };
 
+    const getUpcomingMock = async () => {
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("level")
+        .eq("id", userId)
+        .maybeSingle();
+      if (profileErr) throw profileErr;
+      const userLevel = (profile as { level?: string | null } | null)?.level ?? null;
+      const now = new Date().toISOString();
+
+      const { data: rows, error } = await supabase
+        .from("quizzes")
+        .select(
+          "id,title,total_questions,duration_seconds,starts_at,ends_at,kind,created_at,level",
+        )
+        .eq("status", "published")
+        .eq("kind", "mock")
+        .or(`ends_at.gt.${now},ends_at.is.null`)
+        .order("starts_at", { ascending: true, nullsFirst: false })
+        .limit(20);
+      if (error) throw error;
+      if (!rows?.length) return null;
+
+      const eligible = rows.filter((r) => {
+        if (!r.level) return true; // level-wide mock
+        return r.level === userLevel;
+      });
+      if (!eligible.length) return null;
+
+      const ids = eligible.map((r) => r.id);
+      const { data: qq, error: qqErr } = await supabase
+        .from("quiz_questions")
+        .select("quiz_id")
+        .in("quiz_id", ids);
+      if (qqErr) throw qqErr;
+
+      const counts = new Map<string, number>();
+      for (const r of qq ?? []) {
+        counts.set(r.quiz_id, (counts.get(r.quiz_id) ?? 0) + 1);
+      }
+      return eligible.find((r) => (counts.get(r.id) ?? 0) > 0) ?? null;
+    };
+
     const [
       mcqCountR,
       mcqWeekR,
@@ -131,13 +174,7 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         .eq("status", "sent")
         .order("sent_at", { ascending: false, nullsFirst: false })
         .limit(6),
-      supabase
-        .from("quizzes")
-        .select("id,title,total_questions,duration_seconds,starts_at,kind,created_at")
-        .eq("status", "published")
-        .eq("kind", "mock")
-        .order("starts_at", { ascending: true, nullsFirst: false })
-        .limit(1),
+      getUpcomingMock(),
       supabase
         .from("quizzes")
         .select(
@@ -344,7 +381,7 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
       learning,
       recommendations,
       notifications: notificationsR.data ?? [],
-      upcomingMock: upcomingMockR.data?.[0] ?? null,
+      upcomingMock: upcomingMockR ?? null,
       recentActivity,
     };
   });

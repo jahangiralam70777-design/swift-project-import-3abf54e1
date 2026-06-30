@@ -98,6 +98,58 @@ const Sparkline = memo(function Sparkline({ values, color }: { values: number[];
   );
 });
 
+function fmtScheduled(iso: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function fmtCountdown(target: string | null): string | null {
+  if (!target) return null;
+  const ms = new Date(target).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  return `${m}m ${sec}s`;
+}
+
+function LiveMockStatus({
+  upcoming,
+}: {
+  upcoming: { starts_at: string | null; ends_at: string | null } | null;
+}) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return useMemo(() => {
+    if (!upcoming) return null;
+    const now = Date.now();
+    const startsAt = upcoming.starts_at ? new Date(upcoming.starts_at).getTime() : null;
+    const endsAt = upcoming.ends_at ? new Date(upcoming.ends_at).getTime() : null;
+    const isLive = (!startsAt || startsAt <= now) && (!endsAt || endsAt > now);
+    if (isLive) return "Live now";
+    const scheduled = fmtScheduled(upcoming.starts_at);
+    const countdown = fmtCountdown(upcoming.starts_at);
+    if (scheduled && countdown) return `Scheduled ${scheduled} · Starts in ${countdown}`;
+    if (scheduled) return `Scheduled ${scheduled}`;
+    return "Available anytime";
+  }, [upcoming, tick]);
+}
+
+
 export function DashContent() {
   const { isPathHidden } = useModuleVisibility();
   const mockTestHidden = isPathHidden("/mock-test");
@@ -567,7 +619,14 @@ export function DashContent() {
                 <p>
                   · <CountUp value={counts?.availableMocks ?? 0} /> mocks available
                 </p>
-                <p>· Updated {timeAgo(upcoming?.created_at)}</p>
+                <p>
+                  ·{" "}
+                  {upcoming ? (
+                    <LiveMockStatus upcoming={upcoming} />
+                  ) : (
+                    `Updated ${timeAgo(upcoming?.created_at)}`
+                  )}
+                </p>
               </div>
 
               <Link
