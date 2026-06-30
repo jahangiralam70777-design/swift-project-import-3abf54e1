@@ -560,7 +560,7 @@ export function DashContent() {
 
               <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
                 <p>
-                  · <CountUp value={counts?.mocks ?? 0} /> mocks available
+                  · <CountUp value={counts?.availableMocks ?? 0} /> mocks available
                 </p>
                 <p>· Updated {timeAgo(upcoming?.created_at)}</p>
               </div>
