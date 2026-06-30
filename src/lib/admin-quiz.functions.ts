@@ -164,7 +164,7 @@ export const adminQuizStats = createServerFn({ method: "GET" })
         .limit(5000),
       sb
         .from("exam_attempts")
-        .select("score,total_count,created_at,completed_at,duration_seconds")
+        .select("id,user_id,status,score,total_count,created_at,completed_at,duration_seconds")
         .eq("kind", "quiz")
         .gte("created_at", monthAgo)
         .limit(5000),
