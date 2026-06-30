@@ -7,6 +7,7 @@ import { studentDashboardSnapshot } from "@/lib/student-dashboard.functions";
 import { studentAdvancedAnalytics } from "@/lib/student-advanced-analytics.functions";
 import { useAppStore } from "@/stores/app-store";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMyNotifications } from "@/hooks/use-my-notifications";
 
 const CompletionTracker = lazy(() =>
   import("./CompletionTracker").then((m) => ({ default: m.CompletionTracker })),
@@ -198,7 +199,14 @@ export function DashContent() {
 
   const recommendations = data?.recommendations ?? [];
   const recentActivity = data?.recentActivity ?? [];
-  const liveNotifications = data?.notifications ?? [];
+  const { items: myNotifications } = useMyNotifications();
+  const liveNotifications = myNotifications
+    .slice()
+    .sort((a, b) => {
+      const ta = Date.parse(a.sent_at ?? a.created_at ?? "") || 0;
+      const tb = Date.parse(b.sent_at ?? b.created_at ?? "") || 0;
+      return tb - ta;
+    });
   const upcoming = data?.upcomingMock;
 
   // Calendar grid for current month
