@@ -200,13 +200,11 @@ export function DashContent() {
   const recommendations = data?.recommendations ?? [];
   const recentActivity = data?.recentActivity ?? [];
   const { items: myNotifications } = useMyNotifications();
-  const liveNotifications = myNotifications
-    .slice()
-    .sort((a, b) => {
-      const ta = Date.parse(a.sent_at ?? a.created_at ?? "") || 0;
-      const tb = Date.parse(b.sent_at ?? b.created_at ?? "") || 0;
-      return tb - ta;
-    });
+  const liveNotifications = myNotifications.slice().sort((a, b) => {
+    const ta = Date.parse(a.sent_at ?? a.created_at ?? "") || 0;
+    const tb = Date.parse(b.sent_at ?? b.created_at ?? "") || 0;
+    return tb - ta;
+  });
   const upcoming = data?.upcomingMock;
 
   // Calendar grid for current month
