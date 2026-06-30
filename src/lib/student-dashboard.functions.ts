@@ -18,11 +18,73 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
     weekStartDate.setDate(weekStartDate.getDate() - ((weekStartDate.getDay() + 6) % 7));
     const weekStart = weekStartDate.toISOString();
 
+    type SubmissionKind = "quiz" | "mock";
+    type WeeklySubmissionRow = {
+      id: string;
+      user_id: string | null;
+      kind: string | null;
+      status: string | null;
+      completed_at: string | null;
+      created_at: string | null;
+      started_at: string | null;
+      quizzes?: { kind: string | null } | Array<{ kind: string | null }> | null;
+    };
+
+    const isSubmissionKind = (kind: string | null | undefined): kind is SubmissionKind =>
+      kind === "quiz" || kind === "mock";
+
+    const getWeeklySubmissionCounts = async () => {
+      const submittedThisWeek = `completed_at.gte.${weekStart},and(completed_at.is.null,created_at.gte.${weekStart})`;
+      const buildQuery = (columns: string) =>
+        supabase
+          .from("exam_attempts")
+          .select(columns)
+          .eq("user_id", userId)
+          .in("status", ["completed", "submitted"])
+          .or(submittedThisWeek);
+
+      let result = await buildQuery(
+        "id,user_id,kind,status,completed_at,created_at,started_at,quiz_id,quizzes(kind)",
+      );
+
+      // Some legacy environments may not expose the embedded quizzes relation
+      // through the API cache. The attempts table remains the source of truth;
+      // this fallback only drops the legacy classification assist.
+      if (result.error) {
+        result = await buildQuery(
+          "id,user_id,kind,status,completed_at,created_at,started_at,quiz_id",
+        );
+      }
+      if (result.error) throw result.error;
+
+      const counts: Record<SubmissionKind, number> = { quiz: 0, mock: 0 };
+      const weekStartMs = weekStartDate.getTime();
+
+      for (const row of (result.data ?? []) as unknown as WeeklySubmissionRow[]) {
+        if (row.user_id !== userId) continue;
+        if (row.status !== "completed" && row.status !== "submitted") continue;
+
+        const submittedAt = row.completed_at ?? row.created_at ?? row.started_at;
+        const submittedAtMs = submittedAt ? Date.parse(submittedAt) : Number.NaN;
+        if (!Number.isFinite(submittedAtMs) || submittedAtMs < weekStartMs) continue;
+
+        const quiz = Array.isArray(row.quizzes) ? row.quizzes[0] : row.quizzes;
+        const kind = isSubmissionKind(quiz?.kind)
+          ? quiz.kind
+          : isSubmissionKind(row.kind)
+            ? row.kind
+            : null;
+
+        if (kind) counts[kind] += 1;
+      }
+
+      return counts;
+    };
+
     const [
       mcqCountR,
       mcqWeekR,
-      quizWeekR,
-      mockWeekR,
+      weeklySubmissionCounts,
       notesCountR,
       classesCountR,
       availableMockCountR,
@@ -38,20 +100,7 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         .select("id", { count: "exact", head: true })
         .eq("status", "published")
         .gte("created_at", since7),
-      supabase
-        .from("exam_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .eq("kind", "quiz")
-        .in("status", ["completed", "submitted"])
-        .or(`completed_at.gte.${weekStart},and(completed_at.is.null,created_at.gte.${weekStart})`),
-      supabase
-        .from("exam_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .eq("kind", "mock")
-        .in("status", ["completed", "submitted"])
-        .or(`completed_at.gte.${weekStart},and(completed_at.is.null,created_at.gte.${weekStart})`),
+      getWeeklySubmissionCounts(),
       supabase
         .from("short_notes")
         .select("id", { count: "exact", head: true })
@@ -279,10 +328,10 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
       counts: {
         mcqs: mcqCountR.count ?? 0,
         mcqsThisWeek: mcqWeekR.count ?? 0,
-        quizzes: quizWeekR.count ?? 0,
-        quizzesThisWeek: quizWeekR.count ?? 0,
-        mocks: mockWeekR.count ?? 0,
-        mocksThisWeek: mockWeekR.count ?? 0,
+        quizzes: weeklySubmissionCounts.quiz,
+        quizzesThisWeek: weeklySubmissionCounts.quiz,
+        mocks: weeklySubmissionCounts.mock,
+        mocksThisWeek: weeklySubmissionCounts.mock,
         availableMocks: availableMockCountR.count ?? 0,
         notes: notesCountR.count ?? 0,
         classes: classesCountR.count ?? 0,

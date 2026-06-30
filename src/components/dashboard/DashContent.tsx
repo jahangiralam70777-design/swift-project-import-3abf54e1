@@ -101,11 +101,12 @@ export function DashContent() {
   const { isPathHidden } = useModuleVisibility();
   const mockTestHidden = isPathHidden("/mock-test");
 
-  const userName = useAppStore((s) => s.user?.name ?? "Learner");
+  const user = useAppStore((s) => s.user);
+  const userName = user?.name ?? "Learner";
 
   const fetchSnapshot = useServerFn(studentDashboardSnapshot);
   const { data } = useQuery({
-    queryKey: ["student-dashboard-snapshot", "submission-counts-v2"],
+    queryKey: ["student-dashboard-snapshot", "submission-counts-v3", user?.id ?? "pending"],
     queryFn: () => fetchSnapshot(),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
