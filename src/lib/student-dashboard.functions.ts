@@ -53,11 +53,12 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         .eq("status", "published")
         .eq("kind", "mock"),
       supabase
-        .from("quizzes")
+        .from("exam_attempts")
         .select("id", { count: "exact", head: true })
-        .eq("status", "published")
+        .eq("user_id", userId)
         .eq("kind", "mock")
-        .gte("created_at", since7),
+        .eq("status", "completed")
+        .gte("completed_at", since7),
       supabase
         .from("short_notes")
         .select("id", { count: "exact", head: true })
