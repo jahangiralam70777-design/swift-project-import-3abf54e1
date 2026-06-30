@@ -94,7 +94,6 @@ const Sparkline = memo(function Sparkline({ values, color }: { values: number[];
 export function DashContent() {
   const { isPathHidden } = useModuleVisibility();
   const mockTestHidden = isPathHidden("/mock-test");
-  const shortNotesHidden = isPathHidden("/short-notes");
 
   const userName = useAppStore((s) => s.user?.name ?? "Learner");
 
