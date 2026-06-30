@@ -624,7 +624,7 @@ export function DashContent() {
             <Bell className="h-4 w-4 text-muted-foreground" />
           </div>
           <ul className="mt-4 space-y-3">
-            {liveNotifications.slice(0, 4).map((n) => {
+            {liveNotifications.slice(0, 3).map((n) => {
               const tone =
                 n.priority === "high"
                   ? "var(--neon-pink)"
@@ -637,9 +637,14 @@ export function DashContent() {
                     className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
                     style={{ background: tone, boxShadow: `0 0 10px ${tone}` }}
                   />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium line-clamp-2">{n.title}</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    {n.body && (
+                      <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground line-clamp-2">
+                        {n.body}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[10px] text-muted-foreground">
                       {timeAgo(n.sent_at ?? n.created_at)}
                     </p>
                   </div>
