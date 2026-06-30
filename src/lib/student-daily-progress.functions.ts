@@ -147,7 +147,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       fetchNonPracticeAnswers(),
     ]);
 
-
     const attempts = attemptsR.data ?? [];
     const subjects = subjectsR.data ?? [];
     const chapters = chaptersR.data ?? [];
@@ -199,7 +198,8 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
         is_correct: r.is_correct,
         at: r.answered_at,
         kind: "mcq_practice",
-        subject_id: r.subject_id ?? (r.chapter_id ? chapterToSubject.get(r.chapter_id) ?? null : null),
+        subject_id:
+          r.subject_id ?? (r.chapter_id ? (chapterToSubject.get(r.chapter_id) ?? null) : null),
         chapter_id: r.chapter_id ?? mcqToChapter.get(r.mcq_id) ?? null,
       })),
     ];
@@ -207,7 +207,8 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       const ea = Array.isArray(row.exam_attempts) ? row.exam_attempts[0] : row.exam_attempts;
       if (!ea || !row.chosen_option) continue;
       const chapterId = ea.chapter_id ?? mcqToChapter.get(row.mcq_id) ?? null;
-      const subjectId = ea.subject_id ?? (chapterId ? chapterToSubject.get(chapterId) ?? null : null);
+      const subjectId =
+        ea.subject_id ?? (chapterId ? (chapterToSubject.get(chapterId) ?? null) : null);
       answers.push({
         mcq_id: row.mcq_id,
         is_correct: row.is_correct,
@@ -274,7 +275,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       });
       weeklyBars.push(accOf(dayAns));
     }
-
 
     // Streak
     const daySet = new Set<string>();
@@ -440,7 +440,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       practiceCompletionPct: number;
     };
 
-
     const solvedByChapter = new Map<string, Set<string>>();
     const correctByChapter = new Map<string, number>();
     const answeredByChapter = new Map<string, number>();
@@ -466,7 +465,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
         pset.add(ans.mcq_id);
       }
     }
-
 
     const studyByChapter = new Map<string, number>();
     const lastByChapter = new Map<string, number>();
@@ -531,7 +529,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       };
     });
 
-
     // ---- SUBJECT aggregates ----
     type SubjectAgg = {
       id: string;
@@ -591,7 +588,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
         practiceAttempted: practiceSolved > 0,
       };
     });
-
 
     const sortedBySkill = [...subjectAgg]
       .filter((s) => s.attempts > 0 || s.completedChapters > 0)
@@ -678,7 +674,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       });
     }
 
-
     // ---- 365-day GitHub-style heatmap ----
     const dayBucket = new Map<string, { count: number; minutes: number; mcqs: number }>();
     for (const a of completed) {
@@ -743,15 +738,11 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       if (!mostImproved || delta > mostImproved.delta) mostImproved = { name: s.name, delta };
     }
 
-
     // ---- Global totals (only submitted MCQs) ----
     const totalAnswered = answers.length;
     const totalCorrect = correctOf(answers);
     const prevWeekAttempts = attempts.filter(
-      (a) =>
-        a.status === "completed" &&
-        inRange(a, startOfPrevWeek) &&
-        !inRange(a, startOfWeek),
+      (a) => a.status === "completed" && inRange(a, startOfPrevWeek) && !inRange(a, startOfWeek),
     );
     const totals = {
       attempts: completed.length,
