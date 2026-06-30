@@ -60,7 +60,7 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
       const counts: Record<SubmissionKind, number> = { quiz: 0, mock: 0 };
       const weekStartMs = weekStartDate.getTime();
 
-      for (const row of ((result.data ?? []) as unknown as WeeklySubmissionRow[])) {
+      for (const row of (result.data ?? []) as unknown as WeeklySubmissionRow[]) {
         if (row.user_id !== userId) continue;
         if (row.status !== "completed" && row.status !== "submitted") continue;
 
