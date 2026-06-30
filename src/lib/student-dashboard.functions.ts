@@ -69,7 +69,9 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         .eq("kind", "mock"),
       supabase
         .from("exam_attempts")
-        .select("id,kind,quiz_id,subject_id,score,correct_count,total_count,completed_at,started_at,created_at,status")
+        .select(
+          "id,kind,quiz_id,subject_id,score,correct_count,total_count,completed_at,started_at,created_at,status",
+        )
         .eq("user_id", userId)
         .gte("started_at", since30)
         .order("started_at", { ascending: false })
