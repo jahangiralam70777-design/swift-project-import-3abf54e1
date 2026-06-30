@@ -58,6 +58,7 @@ import {
 import { useRealtimeActivity } from "@/hooks/use-realtime-invalidator";
 import { useAppStore } from "@/stores/app-store";
 import { CountUp } from "@/components/realtime/CountUp";
+import { AccuracyOverTimeCard } from "@/components/dashboard/AccuracyOverTimeCard";
 import { useModuleVisibility } from "@/hooks/use-module-visibility";
 
 type RangeKey = "today" | "week" | "month" | "30d";
