@@ -440,10 +440,6 @@ export function DailyProgressCenter() {
     return series.slice(-n).map((d) => ({ label: d.label, value: d.mcqs }));
   }, [series, trendRange]);
 
-  const accData = useMemo(() => {
-    const n = accRange === "today" ? 1 : accRange === "week" ? 7 : accRange === "month" ? 30 : 30;
-    return series.slice(-n).map((d) => ({ label: d.label, value: d.accuracy }));
-  }, [series, accRange]);
 
   if (isLoading && !data) {
     return (
