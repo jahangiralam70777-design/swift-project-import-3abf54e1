@@ -16,7 +16,13 @@ const AdvancedAnalyticsSection = lazy(() =>
 );
 
 /** Mount children only after the browser is idle to keep initial paint fast. */
-function DeferUntilIdle({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+function DeferUntilIdle({
+  children,
+  fallback,
+}: {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const w = window as Window & {
@@ -94,13 +100,12 @@ const Sparkline = memo(function Sparkline({ values, color }: { values: number[];
 export function DashContent() {
   const { isPathHidden } = useModuleVisibility();
   const mockTestHidden = isPathHidden("/mock-test");
-  const shortNotesHidden = isPathHidden("/short-notes");
 
   const userName = useAppStore((s) => s.user?.name ?? "Learner");
 
   const fetchSnapshot = useServerFn(studentDashboardSnapshot);
   const { data } = useQuery({
-    queryKey: ["student-dashboard-snapshot"],
+    queryKey: ["student-dashboard-snapshot", "submission-counts-v2"],
     queryFn: () => fetchSnapshot(),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
@@ -181,7 +186,7 @@ export function DashContent() {
       l: "Quizzes",
       v: counts?.quizzes ?? 0,
       suffix: "",
-      d: shortNotesHidden ? `+${counts?.quizzesThisWeek ?? 0} this week` : `${counts?.notes ?? 0} notes ready`,
+      d: `+${counts?.quizzesThisWeek ?? 0} this week`,
       tone: "oklch(0.7 0.2 200)",
     },
   ];
@@ -189,10 +194,6 @@ export function DashContent() {
   const monthlyPct =
     dailyTarget > 0 ? Math.min(100, Math.round((mcqsMonth / (dailyTarget * 30)) * 100)) : 0;
   const todayPct = dailyPercent;
-
-
-
-
 
   const recommendations = data?.recommendations ?? [];
   const recentActivity = data?.recentActivity ?? [];
@@ -243,8 +244,7 @@ export function DashContent() {
               })}
             </p>
             <h1 className="font-display mt-2 text-3xl font-bold sm:text-4xl lg:text-5xl">
-              {greeting()}, {userName}{" "}
-              <span className="inline-block animate-float">👋</span>
+              {greeting()}, {userName} <span className="inline-block animate-float">👋</span>
             </h1>
             <p className="mt-3 max-w-lg text-sm text-white/85 sm:text-base">
               {(data?.streak ?? 0) > 0
@@ -339,8 +339,6 @@ export function DashContent() {
           </div>
           <AccuracyOverTimeCard options={["today", "week"]} />
         </div>
-
-
 
         {/* Today's Goal ring */}
         <div className="glass shadow-card-soft relative overflow-hidden rounded-3xl p-5">
@@ -560,7 +558,7 @@ export function DashContent() {
 
               <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
                 <p>
-                  · <CountUp value={counts?.mocks ?? 0} /> mocks available
+                  · <CountUp value={counts?.availableMocks ?? 0} /> mocks available
                 </p>
                 <p>· Updated {timeAgo(upcoming?.created_at)}</p>
               </div>
@@ -665,7 +663,9 @@ export function DashContent() {
                   className="glass group flex items-center justify-between rounded-xl p-3 transition-all hover:-translate-y-0.5 hover:shadow-glow"
                 >
                   <div className="min-w-0">
-                    <p className="font-display text-sm font-bold line-clamp-1">{stripAutoTitle(r.title)}</p>
+                    <p className="font-display text-sm font-bold line-clamp-1">
+                      {stripAutoTitle(r.title)}
+                    </p>
                     <p className="text-[10px] text-muted-foreground">
                       {r.total_questions} Qs · {Math.round((r.duration_seconds ?? 0) / 60)} min
                     </p>
