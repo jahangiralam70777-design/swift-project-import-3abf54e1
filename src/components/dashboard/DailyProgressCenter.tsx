@@ -424,7 +424,7 @@ export function DailyProgressCenter() {
   }, [activity, qc]);
 
   const [trendRange, setTrendRange] = useState<RangeKey>("week");
-  const [accRange, setAccRange] = useState<RangeKey>("week");
+  
 
   const today = data?.today;
   const week = data?.week;
