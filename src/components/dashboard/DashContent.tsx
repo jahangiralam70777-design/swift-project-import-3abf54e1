@@ -619,7 +619,14 @@ export function DashContent() {
                 <p>
                   · <CountUp value={counts?.availableMocks ?? 0} /> mocks available
                 </p>
-                <p>· Updated {timeAgo(upcoming?.created_at)}</p>
+                <p>
+                  ·{" "}
+                  {upcoming ? (
+                    <LiveMockStatus upcoming={upcoming} />
+                  ) : (
+                    `Updated ${timeAgo(upcoming?.created_at)}`
+                  )}
+                </p>
               </div>
 
               <Link
