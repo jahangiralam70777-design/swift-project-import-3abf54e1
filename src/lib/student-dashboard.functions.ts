@@ -13,13 +13,15 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
 
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const weekStartDate = new Date();
+    weekStartDate.setHours(0, 0, 0, 0);
+    weekStartDate.setDate(weekStartDate.getDate() - ((weekStartDate.getDay() + 6) % 7));
+    const weekStart = weekStartDate.toISOString();
 
     const [
       mcqCountR,
       mcqWeekR,
-      quizCountR,
       quizWeekR,
-      mockCountR,
       mockWeekR,
       notesCountR,
       classesCountR,
@@ -36,29 +38,26 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
         .eq("status", "published")
         .gte("created_at", since7),
       supabase
-        .from("quizzes")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "published")
-        .eq("kind", "quiz"),
-      supabase
         .from("exam_attempts")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("kind", "quiz")
-        .eq("status", "completed")
-        .gte("completed_at", since7),
+        .in("status", ["completed", "submitted"])
+        .or(`completed_at.gte.${weekStart},and(completed_at.is.null,created_at.gte.${weekStart})`),
       supabase
-        .from("quizzes")
+        .from("exam_attempts")
         .select("id", { count: "exact", head: true })
-        .eq("status", "published")
+        .eq("user_id", userId)
         .eq("kind", "mock"),
+        .in("status", ["completed", "submitted"])
+        .or(`completed_at.gte.${weekStart},and(completed_at.is.null,created_at.gte.${weekStart})`),
       supabase
         .from("exam_attempts")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("kind", "mock")
-        .eq("status", "completed")
-        .gte("completed_at", since7),
+        .in("status", ["completed", "submitted"])
+        .or(`completed_at.gte.${weekStart},and(completed_at.is.null,created_at.gte.${weekStart})`),
       supabase
         .from("short_notes")
         .select("id", { count: "exact", head: true })
@@ -279,9 +278,9 @@ export const studentDashboardSnapshot = createServerFn({ method: "GET" })
       counts: {
         mcqs: mcqCountR.count ?? 0,
         mcqsThisWeek: mcqWeekR.count ?? 0,
-        quizzes: quizCountR.count ?? 0,
+        quizzes: quizWeekR.count ?? 0,
         quizzesThisWeek: quizWeekR.count ?? 0,
-        mocks: mockCountR.count ?? 0,
+        mocks: mockWeekR.count ?? 0,
         mocksThisWeek: mockWeekR.count ?? 0,
         notes: notesCountR.count ?? 0,
         classes: classesCountR.count ?? 0,
