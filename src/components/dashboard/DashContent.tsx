@@ -181,7 +181,7 @@ export function DashContent() {
       l: "Quizzes",
       v: counts?.quizzes ?? 0,
       suffix: "",
-      d: shortNotesHidden ? `+${counts?.quizzesThisWeek ?? 0} this week` : `${counts?.notes ?? 0} notes ready`,
+      d: `+${counts?.quizzesThisWeek ?? 0} this week`,
       tone: "oklch(0.7 0.2 200)",
     },
   ];
