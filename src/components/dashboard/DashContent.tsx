@@ -7,6 +7,7 @@ import { studentDashboardSnapshot } from "@/lib/student-dashboard.functions";
 import { studentAdvancedAnalytics } from "@/lib/student-advanced-analytics.functions";
 import { useAppStore } from "@/stores/app-store";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMyNotifications } from "@/hooks/use-my-notifications";
 
 const CompletionTracker = lazy(() =>
   import("./CompletionTracker").then((m) => ({ default: m.CompletionTracker })),
