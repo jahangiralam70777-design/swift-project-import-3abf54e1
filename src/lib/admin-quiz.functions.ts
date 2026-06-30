@@ -239,18 +239,37 @@ export const adminQuizStats = createServerFn({ method: "GET" })
     let failCount = 0;
     let durSum = 0;
     let durDen = 0;
+    // Per-student aggregation for Avg. Score / Performance Score:
+    // average each student's own quiz-score percentages first, then average
+    // across students. Only valid, completed attempts are counted; duplicates
+    // by attempt id are ignored.
+    const perUser = new Map<string, { sum: number; den: number }>();
+    const seenAttemptIds = new Set<string>();
     for (const r of (avgRows.data ?? []) as Array<{
+      id: string;
+      user_id: string | null;
+      status: string | null;
       created_at: string;
       completed_at: string | null;
-      score: number;
-      total_count: number;
+      score: number | null;
+      total_count: number | null;
       duration_seconds: number | null;
     }>) {
       const k = (r.created_at || "").slice(0, 10);
       if (k in dayBuckets30) dayBuckets30[k]++;
-      // Performance Score / Avg Score: ONLY completed quiz attempts.
-      if (r.completed_at && r.total_count > 0) {
-        const pctScore = (r.score / r.total_count) * 100;
+      // Performance Score / Avg Score: ONLY valid completed quiz attempts.
+      const isValid =
+        r.status === "completed" &&
+        !!r.completed_at &&
+        typeof r.score === "number" &&
+        typeof r.total_count === "number" &&
+        r.total_count > 0 &&
+        !!r.user_id &&
+        !seenAttemptIds.has(r.id);
+      if (isValid) {
+        seenAttemptIds.add(r.id);
+        const rawPct = ((r.score as number) / (r.total_count as number)) * 100;
+        const pctScore = Math.max(0, Math.min(100, rawPct));
         scoreSum += pctScore;
         scoreDen++;
         if (pctScore > highScore) highScore = pctScore;
@@ -261,10 +280,24 @@ export const adminQuizStats = createServerFn({ method: "GET" })
           durSum += r.duration_seconds;
           durDen++;
         }
+        const uid = r.user_id as string;
+        const bucket = perUser.get(uid) ?? { sum: 0, den: 0 };
+        bucket.sum += pctScore;
+        bucket.den++;
+        perUser.set(uid, bucket);
       }
     }
     const attemptsTrend30 = Object.entries(dayBuckets30).map(([d, c]) => ({ d, c }));
-    const avgScore = scoreDen ? Math.round((scoreSum / scoreDen) * 10) / 10 : 0;
+    // Avg. Score = average of each student's average percentage (out of 100).
+    let userAvgSum = 0;
+    let userAvgDen = 0;
+    for (const { sum, den } of perUser.values()) {
+      if (den > 0) {
+        userAvgSum += sum / den;
+        userAvgDen++;
+      }
+    }
+    const avgScore = userAvgDen ? Math.round((userAvgSum / userAvgDen) * 10) / 10 : 0;
     const passRate = scoreDen ? Math.round((passCount / scoreDen) * 1000) / 10 : 0;
     const failRate = scoreDen ? Math.round((failCount / scoreDen) * 1000) / 10 : 0;
     const highestScore = scoreDen ? Math.round(highScore * 10) / 10 : 0;
@@ -280,7 +313,8 @@ export const adminQuizStats = createServerFn({ method: "GET" })
     const activeUsers = new Set(
       ((activeUsersRows.data ?? []) as Array<{ user_id: string }>).map((r) => r.user_id),
     ).size;
-    // Performance Score = average((score/total_marks)*100) across completed quiz attempts.
+    // Performance Score = average of each student's average percentage
+    // (out of 100) over valid, completed quiz attempts in the selected window.
     const performanceScore = avgScore;
 
     const latestSubmissions = (
