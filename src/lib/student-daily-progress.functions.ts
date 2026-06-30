@@ -121,7 +121,6 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       allMcqs,
       practiceProgressRows,
       nonPracticeAnswerRows,
-      recentPracticeR,
     ] = await Promise.all([
       supabase
         .from("exam_attempts")
@@ -146,13 +145,8 @@ export const studentDailyProgress = createServerFn({ method: "GET" })
       fetchAllMcqs(),
       fetchPracticeProgress(),
       fetchNonPracticeAnswers(),
-      supabase
-        .from("mcq_practice_progress")
-        .select("chapter_id,subject_id,is_correct,answered_at")
-        .eq("user_id", userId)
-        .order("answered_at", { ascending: false })
-        .limit(500),
     ]);
+
 
     const attempts = attemptsR.data ?? [];
     const subjects = subjectsR.data ?? [];
